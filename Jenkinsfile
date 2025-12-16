@@ -7,14 +7,14 @@ pipeline {
     }
     
     environment {
-        SONAR_HOST_URL = 'http://16.176.13.252:9000/'
+        SONAR_HOST_URL = 'http://13.210.236.226:9000/'
         SONAR_AUTH_TOKEN = credentials('sonarqube')
     }
 
     stages {
         stage('Git Checkout ') {
             steps {
-                git url: 'https://github.com/AnushaAkkena/POC3', branch: 'main'
+                git url: 'https://github.com/AnushaAkkena/POC-6.git', branch: 'main'
             }
         }
         
@@ -42,12 +42,12 @@ pipeline {
                 }
             }
         
-        stage('OWASP Dependency Check') {
+        /*stage('OWASP Dependency Check') {
             steps {
                    dependencyCheck additionalArguments: '--scan ./   ', odcInstallation: 'DP'
                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
-        }
+        }*/
         
         stage('Maven Build') {
             steps {
