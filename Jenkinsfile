@@ -6,14 +6,15 @@ pipeline {
         maven 'maven3'
     }
     
-    environment{
-        SCANNER_HOME= tool 'sonar-scanner'
+    environment {
+        SONAR_HOST_URL = 'http://13.236.116.41:9000'
+        SONAR_AUTH_TOKEN = credentials('sonarqube')
     }
 
     stages {
         stage('Git Checkout ') {
             steps {
-                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/jaiswaladi246/SpringBoot-WebApplication.git'
+                git url: 'https://github.com/AnushaAkkena/POC3', branch: 'main'
             }
         }
         
@@ -31,14 +32,15 @@ pipeline {
         
         stage('Sonarqube Analysis') {
             steps {
-                    withSonarQubeEnv('sonar-server') {
-                        sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Java-WebApp \
-                        -Dsonar.java.binaries=. \
-                        -Dsonar.projectKey=Java-WebApp '''
+                     sh '''
+                    mvn sonar:sonar \
+                      -Dsonar.projectKey=spring-boot-demo \
+                      -Dsonar.host.url=$SONAR_HOST_URL \
+                      -Dsonar.login=$SONAR_AUTH_TOKEN
+                '''
     
                 }
             }
-        }
         
         stage('OWASP Dependency Check') {
             steps {
