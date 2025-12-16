@@ -7,7 +7,7 @@ pipeline {
     }
     
     environment {
-        SONAR_HOST_URL = 'http://3.105.228.226:9000/'
+        SONAR_HOST_URL = 'http://16.176.13.252:9000/'
         SONAR_AUTH_TOKEN = credentials('sonarqube')
     }
 
@@ -51,17 +51,17 @@ pipeline {
         
         stage('Maven Build') {
             steps {
-                    sh "mvn clean compile"
+                    sh "mvn clean package"
             }
         }
         
         stage('Docker Build & Push') {
             steps {
                    script {
-                       withDockerRegistry(credentialsId: 'b289dc43-2ede-4bd0-95e8-75ca26100d8d', toolName: 'docker') {
+                       withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker') {
                             sh "docker build -t webapp ."
-                            sh "docker tag webapp adijaiswal/webapp:latest"
-                            sh "docker push adijaiswal/webapp:latest "
+                            sh "docker tag webapp anushaakkena/webapp:latest"
+                            sh "docker push anushaakkena/webapp:latest "
                         }
                    } 
             }
@@ -69,7 +69,7 @@ pipeline {
         
         stage('Docker Image scan') {
             steps {
-                    sh "trivy image adijaiswal/webapp:latest "
+                    sh "trivy image anushaakkena/webapp:latest "
             }
         }
         
