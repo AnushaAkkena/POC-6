@@ -7,7 +7,7 @@ pipeline {
     }
     
     environment {
-        SONAR_HOST_URL = 'http://13.236.116.41:9000'
+        SONAR_HOST_URL = 'http://3.27.71.222:9000/'
         SONAR_AUTH_TOKEN = credentials('sonarqube')
     }
 
