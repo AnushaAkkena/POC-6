@@ -12,7 +12,6 @@ pipeline {
         NVD_API_KEY           = credentials('NVD_API_KEY')
         DOCKER_IMAGE          = 'anushaakkena/trivyproject'
         DOCKER_CREDENTIALS_ID = 'dockerhub'
-        NVD_API_KEY           = credentials('NVD_API_KEY')
 
     }
 
