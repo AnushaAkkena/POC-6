@@ -7,11 +7,10 @@ pipeline {
     }
     
     environment {
-        SONAR_HOST_URL = 'http://52.62.37.57:9000/'
+        SONAR_HOST_URL = 'http://13.236.148.80:9000/'
         SONAR_AUTH_TOKEN = credentials('sonarqube')
         NVD_API_KEY           = credentials('NVD_API_KEY')
-        DOCKER_IMAGE          = 'anushaakkena/trivyproject'
-        DOCKER_CREDENTIALS_ID = 'dockerhub'
+        DOCKERHUB_REPO = "anushaakkena/trivyproject"
 
     }
 
@@ -22,9 +21,9 @@ pipeline {
             }
         }
         
-        stage('Code Compile') {
+        stage('Build') {
             steps {
-                    sh "mvn compile"
+                    sh "mvn clean package"
             }
         }
         
@@ -42,14 +41,8 @@ pipeline {
                       -Dsonar.host.url=$SONAR_HOST_URL \
                       -Dsonar.login=$SONAR_AUTH_TOKEN
                 '''
-    
                 }
             }
-        stage('Maven Build') {
-            steps {
-                    sh "mvn clean package"
-            }
-        }
         
       stage('OWASP Dependency-Check') {
             steps {
@@ -61,53 +54,34 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t trivyproject:latest .'
+                sh 'docker build -t ${DOCKERHUB_REPO}:latest .'
             }
         }
 
-        stage('Push Image') {
+     stage('Trivy Image Scan') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: "${DOCKER_CREDENTIALS_ID}",
-                    usernameVariable: 'DOCKER_USERNAME',
-                    passwordVariable: 'DOCKER_PASSWORD'
-                )]) {
-                    sh '''
-                        echo "Logging in to Docker Hub..."
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-                        echo "Pushing image trivyproject:latest..."
-                        docker push trivyproject:latest
-
-                        echo "Logout..."
-                        docker logout
-                    '''
+                // Scans the local image created in the previous stage
+                sh """
+                    trivy image \
+                      --severity HIGH,CRITICAL \
+                      --no-progress \
+                      ${DOCKERHUB_REPO}:${BUILD_NUMBER}
+                """
+            }
+        }
+ stage('Login and Push to DockerHub') {
+            steps { 
+                withCredentials([usernamePassword(credentialsId: 'dockerhub_creds', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) { 
+                    sh "echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin"
+                    sh "docker push ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
                 }
             }
         }
 
-        stage('Trivy FS Scan') {
+        stage('Run Docker Container') {
             steps {
-                sh '''
-                    echo "Running Trivy scan on source code (non-blocking)..."
-                    trivy fs \
-                      --severity HIGH,CRITICAL \
-                      --format table \
-                      --output trivy-report.txt \
-                      --scanners vuln \
-                      --exit-code 0 \
-                      .
-                '''
-                archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
-            }
-        }
-
-        stage('Docker Run') {
-            steps {
-                sh '''
-                    docker rm -f pocproject || true
-                    docker run -d --name pocproject -p 82:8080 trivyproject:latest
-                '''
+                // Use --rm or a specific name to avoid container name conflicts on re-runs
+                sh "docker run -d -p 8181:8080 ${DOCKERHUB_REPO}:${BUILD_NUMBER}"
             }
         }
         
