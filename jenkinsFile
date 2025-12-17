@@ -7,7 +7,7 @@ pipeline {
     }
     
     environment {
-        SONAR_HOST_URL = 'http://13.210.236.226:9000/'
+        SONAR_HOST_URL = 'http://52.62.37.57:9000/'
         SONAR_AUTH_TOKEN = credentials('sonarqube')
         NVD_API_KEY           = credentials('NVD_API_KEY')
         DOCKER_IMAGE          = 'anushaakkena/trivyproject'
