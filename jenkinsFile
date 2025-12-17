@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+    
+    tools {
+        //jdk 'jdk11'
+        maven 'maven3'
+    }
+    
+    environment {
+        SONAR_HOST_URL = 'http://13.210.236.226:9000/'
+        SONAR_AUTH_TOKEN = credentials('sonarqube')
+    }
+
+    stages {
+        stage('Git Checkout ') {
+            steps {
+                git url: 'https://github.com/AnushaAkkena/POC-6.git', branch: 'main'
+            }
+        }
+        
+        stage('Code Compile') {
+            steps {
+                    sh "mvn compile"
+            }
+        }
+        
+        stage('Run Test Cases') {
+            steps {
+                    sh "mvn test"
+            }
+        }
+        
+        stage('Sonarqube Analysis') {
+            steps {
+                     sh '''
+                    mvn sonar:sonar \
+                      -Dsonar.projectKey=spring-boot-demo \
+                      -Dsonar.host.url=$SONAR_HOST_URL \
+                      -Dsonar.login=$SONAR_AUTH_TOKEN
+                '''
+    
+                }
+            }
+        /*stage('OWASP Dependency Check') {
+            steps {
+                   dependencyCheck additionalArguments: '--scan ./   ', odcInstallation: 'DP'
+                   dependencyCheckPublisher pattern: '**/'
+            }
+        }*/
+        stage('Maven Build') {
+            steps {
+                    sh "mvn clean package"
+            }
+        }
+        
+      stage('Docker Build') {
+            steps {
+                sh 'docker build -t testpocproject:latest .'
+            }
+        }
+        
+        stage('Docker Image scan') {
+            steps {
+                    sh "trivy image testpocproject:latest "
+            }
+        }
+        stage('Docker Run') {
+            steps {
+                sh '''
+                    docker run -d --name testpocapp -p 82:8080 testpocproject:latest
+                '''
+            }
+        }
+        
+    }
+}
